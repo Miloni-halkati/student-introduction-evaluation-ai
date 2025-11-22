@@ -2,7 +2,6 @@ streamlit
 pandas
 openpyxl
 nltk
-language-tool-python
 vaderSentiment
 sentence-transformers
 torch
