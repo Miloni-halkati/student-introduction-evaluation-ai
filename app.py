@@ -161,6 +161,7 @@ if evaluate_btn:
 # --------------------------------------
 st.markdown("""
     <p style='text-align:center; color:gray; margin-top:50px;'>
-        Built by <b>Miloni Halkati</b> — Nirmaan AI Internship Case Study
+        Built by <b>Miloni Halkati</b> 
     </p>
 """, unsafe_allow_html=True)
+
