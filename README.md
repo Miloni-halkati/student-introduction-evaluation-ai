@@ -16,7 +16,6 @@ It provides a **final score out of 100**, along with a **complete breakdown of a
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 How to Run](#-how-to-run)
 - [📊 Evaluation Rubric](#-evaluation-rubric)
-- [🖼️ Screenshots](#️-screenshots)
 - [🌐 Deployment](#-deployment)
 - [📄 License](#-license)
 - [👩‍💻 Author](#-author)
@@ -177,3 +176,4 @@ Built as part of the **Nirmaan AI Internship Case Study**.
 Feel free to connect for collaboration!
 
 ---
+
