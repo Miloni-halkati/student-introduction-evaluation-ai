@@ -46,11 +46,10 @@ if st.button("🔍 Evaluate Transcript"):
 
     if not transcript_input.strip():
         st.error("Please enter or upload a transcript before evaluating.")
-    else:
-        st.info("Evaluating... Please wait ⏳")
 
-        # Run scoring
-        results = evaluate_transcript(transcript_input, duration_seconds)
+    else:
+        with st.spinner("Evaluating... Please wait ⏳"):
+            results = evaluate_transcript(transcript_input, duration_seconds)
 
         st.success("Evaluation Complete!")
 
@@ -96,3 +95,4 @@ if st.button("🔍 Evaluate Transcript"):
 # Footer
 st.write("---")
 st.write("Built by Miloni Halkati")
+
