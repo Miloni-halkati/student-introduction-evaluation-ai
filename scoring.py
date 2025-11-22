@@ -1,10 +1,7 @@
 import re
 import nltk
-import language_tool_python
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-# Initialize external tools
-tool = language_tool_python.LanguageTool('en-US')
 analyzer = SentimentIntensityAnalyzer()
 
 # ----------------------------------------
@@ -19,7 +16,6 @@ def count_words(text):
 
 def extract_words(text):
     return re.findall(r'\b[a-zA-Z]+\b', text.lower())
-
 
 # ----------------------------------------
 # 1. SALUTATION (0–5)
@@ -36,7 +32,6 @@ def score_salutation(text):
         return 2
     return 0
 
-
 # ----------------------------------------
 # 2. KEYWORD PRESENCE (20 + 10)
 # ----------------------------------------
@@ -45,13 +40,13 @@ MUST_HAVE = [
     "name", "my name is", "i am", "age", "years old",
     "class", "studying in", "school",
     "family", "live with", "family members",
-    "hobby", "hobbies", "interests", "my interest", "free time"
+    "hobby", "hobbies", "interests", "free time"
 ]
 
 GOOD_TO_HAVE = [
     "i am from", "origin", "hometown",
     "ambition", "goal", "dream",
-    "fun fact", "one fun thing", "unique",
+    "fun fact", "unique",
     "strength", "achievement"
 ]
 
@@ -68,7 +63,6 @@ def score_keywords(text):
 
     return min(must_score, 20), min(good_score, 10)
 
-
 # ----------------------------------------
 # 3. FLOW DETECTION (0–5)
 # ----------------------------------------
@@ -84,7 +78,6 @@ def score_flow(text):
     if has_salutation and has_basic and has_extra and has_closing:
         return 5
     return 0
-
 
 # ----------------------------------------
 # 4. WPM SCORING (0–10)
@@ -108,32 +101,45 @@ def score_wpm(text, duration_seconds):
     else:
         return 2
 
-
 # ----------------------------------------
-# 5. GRAMMAR (updated logic)
+# 5. GRAMMAR (DEPLOYMENT SAFE — NO LANGUAGETOOL)
 # ----------------------------------------
 
 def score_grammar(text):
-    matches = tool.check(text)
-    wc = count_words(text)
+    sentences = re.split(r'[.!?]', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
 
+    errors = 0
+
+    for s in sentences:
+        # Error 1: sentence doesn't start with capital
+        if s and not s[0].isupper():
+            errors += 1
+        
+        # Error 2: double spaces
+        if "  " in s:
+            errors += 1
+        
+        # Error 3: repeated word (e.g., "the the")
+        if re.search(r'\b(\w+)\s+\1\b', s.lower()):
+            errors += 1
+
+    wc = count_words(text)
     if wc == 0:
         return 0
 
-    errors_per_100 = (len(matches) / wc) * 100
-    grammar_score = 1 - min(errors_per_100 / 25, 1)   # made more lenient
+    errors_per_100 = (errors / wc) * 100
 
-    if grammar_score > 0.75:
+    if errors_per_100 <= 5:
         return 10
-    elif grammar_score >= 0.60:
+    elif errors_per_100 <= 10:
         return 8
-    elif grammar_score >= 0.45:
+    elif errors_per_100 <= 20:
         return 6
-    elif grammar_score >= 0.30:
+    elif errors_per_100 <= 35:
         return 4
     else:
         return 2
-
 
 # ----------------------------------------
 # 6. TTR VOCABULARY (0–10)
@@ -147,9 +153,8 @@ def score_ttr(text):
     distinct = len(set(words))
     ttr = distinct / len(words)
 
-    # smoothing for long texts
     if len(words) > 200:
-        ttr *= 0.80
+        ttr *= 0.80  # smoothing
 
     if ttr >= 0.9:
         return 10
@@ -162,13 +167,12 @@ def score_ttr(text):
     else:
         return 2
 
-
 # ----------------------------------------
 # 7. FILLER WORDS (0–15)
 # ----------------------------------------
 
 FILLERS = [
-    "um", "uh", "like", "you know", "basically", "actually", "hmm", 
+    "um", "uh", "like", "you know", "basically", "actually", "hmm",
     "sort of", "i mean", "kinda", "kind of", "well"
 ]
 
@@ -192,15 +196,13 @@ def score_filler(text):
     else:
         return 3
 
-
 # ----------------------------------------
-# 8. SENTIMENT (updated compound)
+# 8. SENTIMENT (0–15)
 # ----------------------------------------
 
 def score_sentiment(text):
     vs = analyzer.polarity_scores(text)
-    sent = vs['compound']          # range -1 to +1
-    sent = (sent + 1) / 2          # range 0–1
+    sent = (vs['compound'] + 1) / 2  # convert -1–1 to 0–1
 
     if sent >= 0.70:
         return 15
@@ -212,7 +214,6 @@ def score_sentiment(text):
         return 6
     else:
         return 3
-
 
 # ----------------------------------------
 # MAIN FINAL EVALUATION
@@ -233,7 +234,7 @@ def evaluate_transcript(transcript, duration_seconds):
     total = sal + must_k + good_k + flow + wpm + grammar + ttr + filler + senti
 
     if total > 100:
-        total = 100   # safety cap
+        total = 100
 
     return {
         "overall_score": round(total, 2),
